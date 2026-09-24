@@ -38,7 +38,8 @@ app-repartidor/
 └── app.json                 # Configuración general de Expo
 ```
 
-**Requisitos e Instalación**
+##**Requisitos e Instalación**
+
 **1. Clonar el repositorio:**
 
 ```Bash
