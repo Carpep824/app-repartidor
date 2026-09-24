@@ -1,56 +1,62 @@
-# Welcome to your Expo app 👋
+# App Repartidor - Plataforma de Envíos
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación móvil diseñada para optimizar la logística de última milla. Proporciona a los repartidores las herramientas necesarias para gestionar su ruta, navegar hacia los destinos, reportar incidencias y recabar evidencias de entrega de manera eficiente.
 
-## Get started
+## Características Principales
 
-1. Install dependencies
+La aplicación consta de 5 vistas principales integradas mediante un flujo de navegación fluido:
 
-   ```bash
-   npm install
-   ```
+* **Dashboard (Inicio):** Panel de resumen de turno que muestra la cantidad de paquetes asignados, desgloses por zona/prioridad y accesos rápidos para sincronizar ruta o escanear carga manual.
+* **Ruta Activa:** Lista secuencial de paradas con indicadores de progreso, etiquetas de prioridad (Frágil, Prioritario) e integración de menú lateral (Modal) para navegación global.
+* **Mapa de Navegación:** Interfaz de seguimiento en tiempo real con indicaciones paso a paso, tarjeta de detalles de la próxima parada, cálculo de ETA y accesos directos para finalizar o reportar problemas.
+* **Reportar Problema:** Vista modal superpuesta con opciones predefinidas para registrar incidencias (domicilio cerrado, intento fallido, dirección incorrecta o paquete dañado).
+* **Completar Entrega:** Formulario de cierre que requiere captura de evidencia fotográfica, firma digital del receptor y nombre de la persona que recibe el paquete.
 
-2. Start the app
+## Tecnologías Utilizadas
 
-   ```bash
-   npx expo start
-   ```
+* **Framework:** [React Native](https://reactnative.dev/)
+* **Entorno:** [Expo](https://expo.dev/)
+* **Enrutamiento:** [Expo Router](https://docs.expo.dev/router/introduction/) (Navegación basada en la estructura del directorio `src/app`)
+* **Iconografía:** `@expo/vector-icons` (Feather y MaterialCommunityIcons)
 
-In the output, you'll find options to open the app in a
+## Estructura del Proyecto
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+El código fuente está centralizado en el directorio `src/app/`:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+app-repartidor/
+├── src/
+│   └── app/
+│       ├── _layout.tsx      # Configuración del Stack de navegación base
+│       ├── index.tsx        # Dashboard principal de métricas
+│       ├── ruta.tsx         # Listado de paradas y menú lateral
+│       ├── mapa.tsx         # Simulación de mapa de navegación
+│       ├── reportar.tsx     # Modal de selección de incidencias
+│       └── finalizar.tsx    # Captura de firma y evidencia fotográfica
+├── assets/                  # Imágenes y recursos estáticos
+├── package.json             # Dependencias del proyecto
+└── app.json                 # Configuración general de Expo
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+**Requisitos e Instalación**
+**1. Clonar el repositorio:**
 
-### Other setup steps
+```Bash
+git clone [https://github.com/Carpep824/app-repartidor.git](https://github.com/Carpep824/app-repartidor.git)
+```
+**2. Instalar las dependencias requeridas:**
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```Bash
+cd app-repartidor
+npm install
+```
 
-## Learn more
+**3. Iniciar el servidor de desarrollo:**
 
-To learn more about developing your project with Expo, look at the following resources:
+```Bash
+npx expo start
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+   **Visualización**
+- Dispositivo físico: Descarga la aplicación Expo Go (disponible en iOS y Android) y escanea el código QR generado en la terminal.
+- Navegador Web: Presiona la tecla w en la terminal durante la ejecución para previsualizar la interfaz.
