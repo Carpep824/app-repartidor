@@ -1,11 +1,76 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, Image, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 export default function CompletarEntrega() {
   const router = useRouter();
   const [nombre, setNombre] = useState('María González');
+  const [foto, setFoto] = useState<string | null>(null);
+
+  // --- Firma ---
+  const [trazos, setTrazos] = useState<string[]>([]);
+  const [trazoActual, setTrazoActual] = useState('');
+  const [scrollActivo, setScrollActivo] = useState(true);
+  const trazoRef = useRef('');
+
+  const terminarTrazo = () => {
+    if (trazoRef.current) {
+      const terminado = trazoRef.current;
+      setTrazos((prev) => [...prev, terminado]);
+    }
+    trazoRef.current = '';
+    setTrazoActual('');
+    setScrollActivo(true);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: (e) => {
+        setScrollActivo(false);
+        const { locationX, locationY } = e.nativeEvent;
+        const p = `${locationX.toFixed(1)},${locationY.toFixed(1)}`;
+        trazoRef.current = `M${p} L${p}`; // el punto inicial permite dibujar un toque
+        setTrazoActual(trazoRef.current);
+      },
+      onPanResponderMove: (e) => {
+        const { locationX, locationY } = e.nativeEvent;
+        trazoRef.current += ` L${locationX.toFixed(1)},${locationY.toFixed(1)}`;
+        setTrazoActual(trazoRef.current);
+      },
+      onPanResponderRelease: terminarTrazo,
+      onPanResponderTerminate: terminarTrazo,
+    })
+  ).current;
+
+  const limpiarFirma = () => {
+    setTrazos([]);
+    trazoRef.current = '';
+    setTrazoActual('');
+  };
+
+  // --- Foto ---
+  const tomarFoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a la cámara para la evidencia.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setFoto(result.assets[0].uri);
+    }
+  };
 
   return (
     <View style={styles.mainContainer}>
@@ -27,7 +92,11 @@ export default function CompletarEntrega() {
         style={styles.keyboardContainer} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollActivo}
+        >
           
           <Text style={styles.subHeaderText}>
             Entregando <Text style={styles.folioBold}>#PKT-8492</Text>
@@ -36,11 +105,17 @@ export default function CompletarEntrega() {
           {/* Sección 1: Evidencia Fotográfica */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>1 · EVIDENCIA FOTOGRÁFICA</Text>
-            <TouchableOpacity style={styles.photoBox}>
-              <View style={styles.photoIconCircle}>
-                <Feather name="camera" size={28} color="#132854" />
-              </View>
-              <Text style={styles.photoText}>Tomar Foto del Domicilio/Paquete</Text>
+            <TouchableOpacity style={styles.photoBox} onPress={tomarFoto}>
+              {foto ? (
+                <Image source={{ uri: foto }} style={styles.photoPreview} />
+              ) : (
+                <>
+                  <View style={styles.photoIconCircle}>
+                    <Feather name="camera" size={28} color="#132854" />
+                  </View>
+                  <Text style={styles.photoText}>Tomar Foto del Domicilio/Paquete</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -48,14 +123,26 @@ export default function CompletarEntrega() {
           <View style={styles.section}>
             <View style={styles.signatureHeader}>
               <Text style={styles.sectionTitle}>2 · FIRMA DEL RECEPTOR</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={limpiarFirma}>
                 <Text style={styles.clearText}>Limpiar</Text>
               </TouchableOpacity>
             </View>
             
-            <View style={styles.signatureBox}>
-              <MaterialCommunityIcons name="gesture" size={64} color="#5B7290" style={styles.signaturePlaceholder} />
-              <Text style={styles.signatureText}>Firma del receptor</Text>
+            <View style={styles.signatureBox} {...panResponder.panHandlers}>
+              <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+                {trazos.map((d, i) => (
+                  <Path key={i} d={d} stroke="#0B2B5B" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                ))}
+                {trazoActual ? (
+                  <Path d={trazoActual} stroke="#0B2B5B" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                ) : null}
+              </Svg>
+              {trazos.length === 0 && !trazoActual && (
+                <View pointerEvents="none" style={{ alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="gesture" size={64} color="#5B7290" style={styles.signaturePlaceholder} />
+                  <Text style={styles.signatureText}>Firma del receptor</Text>
+                </View>
+              )}
             </View>
 
             {/* Input con etiqueta flotante */}
@@ -169,6 +256,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  photoPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 14,
+  },
   signatureHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -190,6 +282,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+    overflow: 'hidden',
   },
   signaturePlaceholder: {
     marginBottom: 8,

@@ -1,11 +1,39 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+type Notificacion = {
+  id: string;
+  icono: keyof typeof Feather.glyphMap;
+  titulo: string;
+  mensaje: string;
+  hora: string;
+  leida: boolean;
+};
 
 export default function RutaActiva() {
   const router = useRouter();
-  const [menuVisible, setMenuVisible] = useState(false); 
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  // --- Notificaciones ---
+  const [notifVisible, setNotifVisible] = useState(false);
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([
+    { id: '1', icono: 'alert-triangle', titulo: 'Entrega prioritaria', mensaje: 'El paquete #PKT-8492 debe entregarse antes de las 12:00.', hora: 'Hace 5 min', leida: false },
+    { id: '2', icono: 'package', titulo: 'Nuevo paquete asignado', mensaje: 'Se agregó #PKT-8520 a tu ruta en la zona Centro.', hora: 'Hace 20 min', leida: false },
+    { id: '3', icono: 'map-pin', titulo: 'Cambio de dirección', mensaje: 'El cliente de #PKT-8501 actualizó su dirección.', hora: 'Hace 1 h', leida: true },
+    { id: '4', icono: 'check-circle', titulo: 'Ruta sincronizada', mensaje: 'Tu ruta del día se sincronizó correctamente.', hora: 'Hace 2 h', leida: true },
+  ]);
+
+  const hayNoLeidas = notificaciones.some((n) => !n.leida);
+
+  const marcarLeida = (id: string) => {
+    setNotificaciones((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)));
+  };
+
+  const marcarTodasLeidas = () => {
+    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
+  };
 
   const paradas = [
     { id: '1', numero: '1', folio: 'Folio #PKT-8492', direccion: 'Blvd. Luis Encinas J', badge: 'PRIORITARIO', badgeType: 'prioritario' },
@@ -24,15 +52,15 @@ export default function RutaActiva() {
           <View style={styles.headerContent}>
             <TouchableOpacity 
               style={styles.headerIcon} 
-              onPress={() => setMenuVisible(true)} // <-- Agregar este evento
+              onPress={() => setMenuVisible(true)}
             >
               <Feather name="menu" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             
             <Text style={styles.headerTitle}>Ruta Activa</Text>
             
-            <TouchableOpacity style={styles.headerIcon}>
-              <View style={styles.notificationDot} />
+            <TouchableOpacity style={styles.headerIcon} onPress={() => setNotifVisible(true)}>
+              {hayNoLeidas && <View style={styles.notificationDot} />}
               <Feather name="bell" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
@@ -99,55 +127,6 @@ export default function RutaActiva() {
               <Text style={styles.navigateText}>Navegar</Text>
             </TouchableOpacity>
 
-            {/* Menú Lateral (Modal) */}
-            <Modal
-                visible={menuVisible}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setMenuVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                <View style={styles.sideMenu}>
-                    
-                    <View style={styles.menuProfileSection}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>R</Text>
-                    </View>
-                    <Text style={styles.profileName}>Ricardo</Text>
-                    <Text style={styles.profileType}>Repartidor Nivel 2</Text>
-                    </View>
-
-                    <View style={styles.menuLinks}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => {
-                        setMenuVisible(false);
-                        router.push('/');
-                    }}>
-                        <Feather name="grid" size={22} color="#0B2B5B" />
-                        <Text style={styles.menuItemText}>Dashboard</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
-                        <Feather name="map" size={22} color="#18529D" />
-                        <Text style={[styles.menuItemText, { color: '#18529D', fontWeight: 'bold' }]}>Ruta Activa</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
-                        <Feather name="settings" size={22} color="#0B2B5B" />
-                        <Text style={styles.menuItemText}>Configuración</Text>
-                    </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity style={styles.logoutButton} onPress={() => setMenuVisible(false)}>
-                    <Feather name="log-out" size={22} color="#E53935" />
-                    <Text style={styles.logoutText}>Cerrar Sesión</Text>
-                    </TouchableOpacity>
-                    
-                </View>
-                
-                <TouchableOpacity style={styles.closeOverlayArea} onPress={() => setMenuVisible(false)} activeOpacity={1} />
-                </View>
-            </Modal>
-
           </View>
         ))}
 
@@ -155,7 +134,90 @@ export default function RutaActiva() {
         
       </ScrollView>
 
-      
+      {/* Panel de Notificaciones (Modal) */}
+      <Modal
+        visible={notifVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setNotifVisible(false)}
+      >
+        <Pressable style={styles.notifOverlay} onPress={() => setNotifVisible(false)}>
+          <Pressable style={styles.notifPanel} onPress={() => {}}>
+            <View style={styles.notifHeader}>
+              <Text style={styles.notifTitle}>Notificaciones</Text>
+              <TouchableOpacity onPress={marcarTodasLeidas}>
+                <Text style={styles.notifMarkAll}>Marcar leídas</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+              {notificaciones.map((n) => (
+                <TouchableOpacity key={n.id} style={styles.notifItem} onPress={() => marcarLeida(n.id)}>
+                  <View style={styles.notifIconCircle}>
+                    <Feather name={n.icono} size={18} color="#18529D" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.notifItemTitle}>{n.titulo}</Text>
+                    <Text style={styles.notifItemMsg}>{n.mensaje}</Text>
+                    <Text style={styles.notifItemTime}>{n.hora}</Text>
+                  </View>
+                  {!n.leida && <View style={styles.unreadDot} />}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Menú Lateral (Modal) */}
+      <Modal
+        visible={menuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.sideMenu}>
+            
+            <View style={styles.menuProfileSection}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>R</Text>
+              </View>
+              <Text style={styles.profileName}>Ricardo</Text>
+              <Text style={styles.profileType}>Repartidor Nivel 2</Text>
+            </View>
+
+            <View style={styles.menuLinks}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => {
+                setMenuVisible(false);
+                router.push('/');
+              }}>
+                <Feather name="grid" size={22} color="#0B2B5B" />
+                <Text style={styles.menuItemText}>Dashboard</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
+                <Feather name="map" size={22} color="#18529D" />
+                <Text style={[styles.menuItemText, { color: '#18529D', fontWeight: 'bold' }]}>Ruta Activa</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
+                <Feather name="settings" size={22} color="#0B2B5B" />
+                <Text style={styles.menuItemText}>Configuración</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.logoutButton} onPress={() => setMenuVisible(false)}>
+              <Feather name="log-out" size={22} color="#E53935" />
+              <Text style={styles.logoutText}>Cerrar Sesión</Text>
+            </TouchableOpacity>
+            
+          </View>
+          
+          <TouchableOpacity style={styles.closeOverlayArea} onPress={() => setMenuVisible(false)} activeOpacity={1} />
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -412,5 +474,81 @@ const styles = StyleSheet.create({
     color: '#E53935',
     marginLeft: 16,
     fontWeight: '600',
+  },
+  notifOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignItems: 'flex-end',
+    paddingTop: (StatusBar.currentHeight ?? 44) + 60,
+    paddingHorizontal: 16,
+  },
+  notifPanel: {
+    width: '92%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  notifHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E6EDF5',
+  },
+  notifTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0B2B5B',
+  },
+  notifMarkAll: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#18529D',
+  },
+  notifItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F2F5',
+  },
+  notifIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E6F0FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  notifItemTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0B2B5B',
+    marginBottom: 2,
+  },
+  notifItemMsg: {
+    fontSize: 12,
+    color: '#5B7290',
+    marginBottom: 4,
+  },
+  notifItemTime: {
+    fontSize: 11,
+    color: '#9AA6B8',
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E53935',
+    marginLeft: 8,
   },
 });

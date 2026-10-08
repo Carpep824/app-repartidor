@@ -68,8 +68,8 @@ export default function DashboardRepartidor() {
             <Text style={styles.primaryButtonText}>Sincronizar e Iniciar Ruta</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryButton}>
-            <MaterialCommunityIcons name="barcode-scan" size={22} color="#0B2B5B" style={styles.buttonIcon} />
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/escanear')}>
+              <MaterialCommunityIcons name="barcode-scan" size={22} color="#0B2B5B" style={styles.buttonIcon} />
             <Text style={styles.secondaryButtonText}>Escanear carga manual</Text>
           </TouchableOpacity>
         </View>
