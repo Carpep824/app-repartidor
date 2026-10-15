@@ -1,5 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+
+import { useAuth } from '@/context/auth';
+
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -8,7 +10,7 @@ const USUARIO_PRUEBA = 'repartidor';
 const PASSWORD_PRUEBA = '1234';
 
 export default function Login() {
-  const router = useRouter();
+  const { iniciarSesion: guardarSesion } = useAuth();
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
   const [verPassword, setVerPassword] = useState(false);
@@ -29,7 +31,7 @@ export default function Login() {
 
     if (usuario.trim().toLowerCase() === USUARIO_PRUEBA && password === PASSWORD_PRUEBA) {
       setCargando(false);
-      router.replace('/');
+      guardarSesion(usuario.trim()); // el guard del _layout te lleva al dashboard
     } else {
       setCargando(false);
       setError('Usuario o contraseña incorrectos.');

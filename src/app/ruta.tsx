@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { useAuth } from '@/context/auth';
+
 type Notificacion = {
   id: string;
   icono: keyof typeof Feather.glyphMap;
@@ -14,6 +16,7 @@ type Notificacion = {
 
 export default function RutaActiva() {
   const router = useRouter();
+  const { cerrarSesion } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
 
   // --- Notificaciones ---
@@ -63,11 +66,6 @@ export default function RutaActiva() {
               {hayNoLeidas && <View style={styles.notificationDot} />}
               <Feather name="bell" size={22} color="#FFFFFF" />
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={() => {
-              setMenuVisible(false);
-              router.replace('/login' as any);
-            }}></TouchableOpacity>
 
           </View>
         </SafeAreaView>
@@ -213,7 +211,10 @@ export default function RutaActiva() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.logoutButton} onPress={() => setMenuVisible(false)}>
+            <TouchableOpacity style={styles.logoutButton} onPress={() => {
+              setMenuVisible(false);
+              cerrarSesion();
+            }}>
               <Feather name="log-out" size={22} color="#E53935" />
               <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
