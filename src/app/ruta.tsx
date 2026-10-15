@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { MenuLateral } from '@/components/menu-lateral';
 import { useAuth } from '@/context/auth';
 
 type Notificacion = {
@@ -174,56 +175,8 @@ export default function RutaActiva() {
       </Modal>
 
       {/* Menú Lateral (Modal) */}
-      <Modal
-        visible={menuVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.sideMenu}>
-
-            <View style={styles.menuProfileSection}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>R</Text>
-              </View>
-              <Text style={styles.profileName}>Ricardo</Text>
-              <Text style={styles.profileType}>Repartidor Nivel 2</Text>
-            </View>
-
-            <View style={styles.menuLinks}>
-              <TouchableOpacity style={styles.menuItem} onPress={() => {
-                setMenuVisible(false);
-                router.push('/');
-              }}>
-                <Feather name="grid" size={22} color="#0B2B5B" />
-                <Text style={styles.menuItemText}>Dashboard</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
-                <Feather name="map" size={22} color="#18529D" />
-                <Text style={[styles.menuItemText, { color: '#18529D', fontWeight: 'bold' }]}>Ruta Activa</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
-                <Feather name="settings" size={22} color="#0B2B5B" />
-                <Text style={styles.menuItemText}>Configuración</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={() => {
-              setMenuVisible(false);
-              cerrarSesion();
-            }}>
-              <Feather name="log-out" size={22} color="#E53935" />
-              <Text style={styles.logoutText}>Cerrar Sesión</Text>
-            </TouchableOpacity>
-
-          </View>
-
-          <TouchableOpacity style={styles.closeOverlayArea} onPress={() => setMenuVisible(false)} activeOpacity={1} />
-        </View>
-      </Modal>
+      <MenuLateral visible={menuVisible} onClose={() => setMenuVisible(false)} actual="ruta" />
+       
 
     </View>
   );

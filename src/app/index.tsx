@@ -1,89 +1,136 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { MenuLateral } from '@/components/menu-lateral';
 
 export default function DashboardRepartidor() {
   const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        
-        {/* Header / Logo */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoIconBg}>
-            <Feather name="package" size={20} color="#FFFFFF" />
+    <View style={styles.mainContainer}>
+
+      {/* Encabezado Azul Oscuro */}
+      <View style={styles.headerBackground}>
+        <SafeAreaView>
+          <View style={styles.headerContent}>
+            <TouchableOpacity style={styles.headerIcon} onPress={() => setMenuVisible(true)}>
+              <Feather name="menu" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Inicio</Text>
+            <View style={{ width: 24 }} />
           </View>
-          <View style={styles.logoTextWrapper}>
-            <Text style={styles.logoTextMain}>Rumbo<Text style={styles.logoTextLight}>Envíos</Text></Text>
-            <Text style={styles.logoTextSub}>REPARTIDOR</Text>
-          </View>
-        </View>
-
-        {/* Saludo */}
-        <View style={styles.greetingContainer}>
-          <Text style={styles.locationText}>CENTRO DE DISTRIBUCIÓN · HERMOSILLO</Text>
-          <Text style={styles.greetingText}>Buen turno, Ricardo</Text>
-        </View>
-
-        {/* Tarjeta de Resumen */}
-        <View style={styles.summaryCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Paquetes asignados hoy</Text>
-            <View style={styles.iconCircle}>
-              <Feather name="box" size={18} color="#18529D" />
-            </View>
-          </View>
-          
-          <Text style={styles.bigNumber}>45</Text>
-          
-          <View style={styles.divider} />
-          
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>18</Text>
-              <Text style={styles.statLabel}>Prioritarios</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>7</Text>
-              <Text style={styles.statLabel}>Zonas</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>~6h</Text>
-              <Text style={styles.statLabel}>Estimado</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Espaciador flexible para empujar los botones al fondo */}
-        <View style={{ flex: 1 }} />
-
-        {/* Botones de Acción */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={styles.primaryButton}
-            onPress={() => router.push('/ruta')}
-          >
-            <MaterialCommunityIcons name="sync" size={22} color="#FFFFFF" style={styles.buttonIcon} />
-            <Text style={styles.primaryButtonText}>Sincronizar e Iniciar Ruta</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/escanear')}>
-              <MaterialCommunityIcons name="barcode-scan" size={22} color="#0B2B5B" style={styles.buttonIcon} />
-            <Text style={styles.secondaryButtonText}>Escanear carga manual</Text>
-          </TouchableOpacity>
-        </View>
-
+        </SafeAreaView>
       </View>
-    </SafeAreaView>
+
+      <SafeAreaView style={styles.body}>
+        <View style={styles.container}>
+
+          {/* Header / Logo */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoIconBg}>
+              <Feather name="package" size={20} color="#FFFFFF" />
+            </View>
+            <View style={styles.logoTextWrapper}>
+              <Text style={styles.logoTextMain}>Rumbo<Text style={styles.logoTextLight}>Envíos</Text></Text>
+              <Text style={styles.logoTextSub}>REPARTIDOR</Text>
+            </View>
+          </View>
+
+          {/* Saludo */}
+          <View style={styles.greetingContainer}>
+            <Text style={styles.locationText}>CENTRO DE DISTRIBUCIÓN · HERMOSILLO</Text>
+            <Text style={styles.greetingText}>Buen turno, Ricardo</Text>
+          </View>
+
+          {/* Tarjeta de Resumen */}
+          <View style={styles.summaryCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Paquetes asignados hoy</Text>
+              <View style={styles.iconCircle}>
+                <Feather name="box" size={18} color="#18529D" />
+              </View>
+            </View>
+
+            <Text style={styles.bigNumber}>45</Text>
+
+            <View style={styles.divider} />
+
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>18</Text>
+                <Text style={styles.statLabel}>Prioritarios</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>7</Text>
+                <Text style={styles.statLabel}>Zonas</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>~6h</Text>
+                <Text style={styles.statLabel}>Estimado</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Espaciador flexible para empujar los botones al fondo */}
+          <View style={{ flex: 1 }} />
+
+          {/* Botones de Acción */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/ruta')}
+            >
+              <MaterialCommunityIcons name="sync" size={22} color="#FFFFFF" style={styles.buttonIcon} />
+              <Text style={styles.primaryButtonText}>Sincronizar e Iniciar Ruta</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/escanear')}>
+              <MaterialCommunityIcons name="barcode-scan" size={22} color="#0B2B5B" style={styles.buttonIcon} />
+              <Text style={styles.secondaryButtonText}>Escanear carga manual</Text>
+            </TouchableOpacity>
+          </View>
+
+        </View>
+      </SafeAreaView>
+
+      {/* Menú Lateral */}
+      <MenuLateral visible={menuVisible} onClose={() => setMenuVisible(false)} actual="dashboard" />
+
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  mainContainer: {
     flex: 1,
     backgroundColor: '#F5F8FA',
+  },
+  headerBackground: {
+    backgroundColor: '#132854',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerIcon: {
+    padding: 4,
+  },
+  headerTitle: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 16,
+  },
+  body: {
+    flex: 1,
   },
   container: {
     flex: 1,
@@ -92,8 +139,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
-    marginTop: 10,
+    marginBottom: 32,
   },
   logoIconBg: {
     backgroundColor: '#18529D',
@@ -229,6 +275,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#0B2B5B',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });

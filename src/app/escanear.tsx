@@ -28,6 +28,13 @@ export default function EscanearCarga() {
   const quitarCodigo = (codigo: string) => {
     setCodigos((prev) => prev.filter((c) => c !== codigo));
   };
+  const volver = () => {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/');
+  }
+};
 
   // Mientras se carga el estado del permiso
   if (!permiso) {
@@ -41,7 +48,7 @@ export default function EscanearCarga() {
         <View style={styles.headerBackground}>
           <SafeAreaView>
             <View style={styles.headerContent}>
-              <TouchableOpacity style={styles.headerIcon} onPress={() => router.back()}>
+              <TouchableOpacity style={styles.headerIcon} onPress={volver}>
                 <Feather name="arrow-left" size={24} color="#FFFFFF" />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Escanear Carga</Text>
@@ -68,7 +75,7 @@ export default function EscanearCarga() {
       <View style={styles.headerBackground}>
         <SafeAreaView>
           <View style={styles.headerContent}>
-            <TouchableOpacity style={styles.headerIcon} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.headerIcon} onPress={volver}>
               <Feather name="arrow-left" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Escanear Carga</Text>
@@ -119,7 +126,7 @@ export default function EscanearCarga() {
         <TouchableOpacity
           style={[styles.primaryButton, codigos.length === 0 && styles.buttonDisabled]}
           disabled={codigos.length === 0}
-          onPress={() => router.back()}
+          onPress={volver}
         >
           <Feather name="check" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
           <Text style={styles.primaryButtonText}>Listo ({codigos.length})</Text>
