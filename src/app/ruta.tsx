@@ -45,24 +45,30 @@ export default function RutaActiva() {
 
   return (
     <View style={styles.mainContainer}>
-      
+
       {/* Encabezado Azul Oscuro */}
       <View style={styles.headerBackground}>
         <SafeAreaView>
           <View style={styles.headerContent}>
-            <TouchableOpacity 
-              style={styles.headerIcon} 
+            <TouchableOpacity
+              style={styles.headerIcon}
               onPress={() => setMenuVisible(true)}
             >
               <Feather name="menu" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            
+
             <Text style={styles.headerTitle}>Ruta Activa</Text>
-            
+
             <TouchableOpacity style={styles.headerIcon} onPress={() => setNotifVisible(true)}>
               {hayNoLeidas && <View style={styles.notificationDot} />}
               <Feather name="bell" size={22} color="#FFFFFF" />
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.logoutButton} onPress={() => {
+              setMenuVisible(false);
+              router.replace('/login' as any);
+            }}></TouchableOpacity>
+
           </View>
         </SafeAreaView>
       </View>
@@ -75,7 +81,7 @@ export default function RutaActiva() {
           </Text>
           <Text style={styles.progressPercent}>27%</Text>
         </View>
-        
+
         <View style={styles.progressBarTrack}>
           <View style={styles.progressBarFill} />
         </View>
@@ -83,10 +89,10 @@ export default function RutaActiva() {
 
       {/* Lista de Paradas */}
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        
+
         {paradas.map((parada) => (
           <View key={parada.id} style={styles.stopCard}>
-            
+
             {/* Círculo de Número */}
             <View style={styles.numberCircle}>
               <Text style={styles.numberText}>{parada.numero}</Text>
@@ -96,10 +102,10 @@ export default function RutaActiva() {
             <View style={styles.stopInfo}>
               <View style={styles.folioRow}>
                 <Text style={styles.folioText} numberOfLines={1}>Folio {parada.folio.replace('Folio ', '')}</Text>
-                
+
                 {parada.badge && (
                   <View style={[
-                    styles.badge, 
+                    styles.badge,
                     parada.badgeType === 'prioritario' ? styles.badgePrioritario : styles.badgeFragil
                   ]}>
                     <Text style={[
@@ -111,7 +117,7 @@ export default function RutaActiva() {
                   </View>
                 )}
               </View>
-              
+
               <View style={styles.addressRow}>
                 <Feather name="map-pin" size={12} color="#7A8B9E" style={styles.addressIcon} />
                 <Text style={styles.addressText} numberOfLines={1}>{parada.direccion}</Text>
@@ -119,7 +125,7 @@ export default function RutaActiva() {
             </View>
 
             {/* Botón Navegar */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.navigateButton}
               onPress={() => router.push('/mapa')}
             >
@@ -131,7 +137,7 @@ export default function RutaActiva() {
         ))}
 
         <Text style={styles.footerText}>33 PARADAS RESTANTES</Text>
-        
+
       </ScrollView>
 
       {/* Panel de Notificaciones (Modal) */}
@@ -142,7 +148,7 @@ export default function RutaActiva() {
         onRequestClose={() => setNotifVisible(false)}
       >
         <Pressable style={styles.notifOverlay} onPress={() => setNotifVisible(false)}>
-          <Pressable style={styles.notifPanel} onPress={() => {}}>
+          <Pressable style={styles.notifPanel} onPress={() => { }}>
             <View style={styles.notifHeader}>
               <Text style={styles.notifTitle}>Notificaciones</Text>
               <TouchableOpacity onPress={marcarTodasLeidas}>
@@ -178,7 +184,7 @@ export default function RutaActiva() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.sideMenu}>
-            
+
             <View style={styles.menuProfileSection}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>R</Text>
@@ -195,7 +201,7 @@ export default function RutaActiva() {
                 <Feather name="grid" size={22} color="#0B2B5B" />
                 <Text style={styles.menuItemText}>Dashboard</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
                 <Feather name="map" size={22} color="#18529D" />
                 <Text style={[styles.menuItemText, { color: '#18529D', fontWeight: 'bold' }]}>Ruta Activa</Text>
@@ -211,9 +217,9 @@ export default function RutaActiva() {
               <Feather name="log-out" size={22} color="#E53935" />
               <Text style={styles.logoutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
-            
+
           </View>
-          
+
           <TouchableOpacity style={styles.closeOverlayArea} onPress={() => setMenuVisible(false)} activeOpacity={1} />
         </View>
       </Modal>
