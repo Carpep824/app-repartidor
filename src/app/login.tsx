@@ -5,36 +5,33 @@ import { useAuth } from '@/context/auth';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// TODO: reemplazar por la llamada real al backend cuando exista el endpoint de login
-const USUARIO_PRUEBA = 'repartidor';
-const PASSWORD_PRUEBA = '1234';
-
 export default function Login() {
-  const { iniciarSesion: guardarSesion } = useAuth();
-  const [usuario, setUsuario] = useState('');
+  const { iniciarSesion } = useAuth();
+  const [usuario, setUsuario] = useState(''); // correo
   const [password, setPassword] = useState('');
   const [verPassword, setVerPassword] = useState(false);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
-  const iniciarSesion = async () => {
+  const entrar = async () => {
     if (!usuario.trim() || !password) {
-      setError('Ingresa tu usuario y contraseña.');
+      setError('Ingresa tu correo y contraseña.');
       return;
     }
 
     setError('');
     setCargando(true);
-
-    // Simula el tiempo de respuesta del servidor
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    if (usuario.trim().toLowerCase() === USUARIO_PRUEBA && password === PASSWORD_PRUEBA) {
+    try {
+      await iniciarSesion(usuario.trim(), password); // el guard del _layout te lleva al dashboard
+    } catch (e: any) {
+      const msg = String(e?.message ?? '');
+      setError(
+        msg.includes('Network')
+          ? 'No se pudo conectar al servidor.'
+          : 'Correo o contraseña incorrectos.'
+      );
+    } finally {
       setCargando(false);
-      guardarSesion(usuario.trim()); // el guard del _layout te lleva al dashboard
-    } else {
-      setCargando(false);
-      setError('Usuario o contraseña incorrectos.');
     }
   };
 
@@ -66,18 +63,19 @@ export default function Login() {
             <Text style={styles.welcomeSubtitle}>Ingresa tus credenciales para comenzar tu turno</Text>
           </View>
 
-          {/* Usuario */}
-          <Text style={styles.label}>USUARIO</Text>
+          {/* Correo */}
+          <Text style={styles.label}>CORREO</Text>
           <View style={styles.inputRow}>
-            <Feather name="user" size={18} color="#7A8B9E" style={styles.inputIcon} />
+            <Feather name="mail" size={18} color="#7A8B9E" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               value={usuario}
               onChangeText={setUsuario}
-              placeholder="Tu usuario"
+              placeholder="correo@ejemplo.com"
               placeholderTextColor="#9AA6B8"
               autoCapitalize="none"
               autoCorrect={false}
+              keyboardType="email-address"
             />
           </View>
 
@@ -94,7 +92,7 @@ export default function Login() {
               secureTextEntry={!verPassword}
               autoCapitalize="none"
               autoCorrect={false}
-              onSubmitEditing={iniciarSesion}
+              onSubmitEditing={entrar}
             />
             <TouchableOpacity onPress={() => setVerPassword((v) => !v)} style={styles.eyeButton}>
               <Feather name={verPassword ? 'eye-off' : 'eye'} size={18} color="#7A8B9E" />
@@ -112,7 +110,7 @@ export default function Login() {
           {/* Botón */}
           <TouchableOpacity
             style={[styles.loginButton, cargando && styles.loginButtonDisabled]}
-            onPress={iniciarSesion}
+            onPress={entrar}
             disabled={cargando}
           >
             {cargando ? (

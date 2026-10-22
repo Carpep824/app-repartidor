@@ -1,13 +1,16 @@
+import { AuthProvider, useAuth } from '@/context/auth';
 import { Stack } from 'expo-router';
 
-import { AuthProvider, useAuth } from '@/context/auth';
-
-function RootNavigator() {
-  const { estaAutenticado } = useAuth();
+function Rutas() {
+  const { usuario, cargando } = useAuth();
+  if (cargando) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={estaAutenticado}>
+      <Stack.Protected guard={!usuario}>
+        <Stack.Screen name="login" />
+      </Stack.Protected>
+      <Stack.Protected guard={!!usuario}>
         <Stack.Screen name="index" />
         <Stack.Screen name="ruta" />
         <Stack.Screen name="mapa" />
@@ -15,15 +18,8 @@ function RootNavigator() {
         <Stack.Screen name="escanear" />
         <Stack.Screen
           name="reportar"
-          options={{
-            presentation: 'transparentModal',
-            animation: 'fade',
-          }}
+          options={{ presentation: 'transparentModal', animation: 'fade' }}
         />
-      </Stack.Protected>
-
-      <Stack.Protected guard={!estaAutenticado}>
-        <Stack.Screen name="login" />
       </Stack.Protected>
     </Stack>
   );
@@ -32,7 +28,7 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <Rutas />
     </AuthProvider>
   );
 }

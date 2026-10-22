@@ -3,11 +3,15 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { useAuth } from '@/context/auth';
+
 import { MenuLateral } from '@/components/menu-lateral';
 
 export default function DashboardRepartidor() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
+  const { usuario } = useAuth();
+
 
   return (
     <View style={styles.mainContainer}>
@@ -42,7 +46,7 @@ export default function DashboardRepartidor() {
           {/* Saludo */}
           <View style={styles.greetingContainer}>
             <Text style={styles.locationText}>CENTRO DE DISTRIBUCIÓN · HERMOSILLO</Text>
-            <Text style={styles.greetingText}>Buen turno, Ricardo</Text>
+            <Text style={styles.greetingText}>Buen turno, {usuario?.nombre}</Text>
           </View>
 
           {/* Tarjeta de Resumen */}

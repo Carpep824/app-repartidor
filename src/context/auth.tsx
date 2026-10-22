@@ -1,23 +1,38 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import * as Auth from '@/services/auth';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 type AuthContextType = {
-  usuario: string | null;
+  usuario: Auth.Usuario | null;
   estaAutenticado: boolean;
-  iniciarSesion: (usuario: string) => void;
-  cerrarSesion: () => void;
+  cargando: boolean;
+  iniciarSesion: (email: string, password: string) => Promise<void>;
+  cerrarSesion: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<string | null>(null);
+  const [usuario, setUsuario] = useState<Auth.Usuario | null>(null);
+  const [cargando, setCargando] = useState(true);
 
-  const iniciarSesion = (nombre: string) => setUsuario(nombre);
-  const cerrarSesion = () => setUsuario(null);
+  useEffect(() => {
+    Auth.obtenerUsuario()
+      .then(setUsuario)
+      .finally(() => setCargando(false));
+  }, []);
+
+  const iniciarSesion = async (email: string, password: string) => {
+    setUsuario(await Auth.login(email, password));
+  };
+
+  const cerrarSesion = async () => {
+    await Auth.cerrarSesion();
+    setUsuario(null);
+  };
 
   return (
     <AuthContext.Provider
-      value={{ usuario, estaAutenticado: usuario !== null, iniciarSesion, cerrarSesion }}
+      value={{ usuario, estaAutenticado: usuario !== null, cargando, iniciarSesion, cerrarSesion }}
     >
       {children}
     </AuthContext.Provider>
