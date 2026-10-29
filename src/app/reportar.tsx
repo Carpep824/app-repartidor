@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export default function ReportarProblema() {
   const router = useRouter();
+  const { folio } = useLocalSearchParams<{ folio?: string }>();
   const [motivoSeleccionado, setMotivoSeleccionado] = useState<string | null>(null);
 
   const opciones = [
@@ -36,7 +37,7 @@ export default function ReportarProblema() {
             </View>
             <View style={styles.headerTextContainer}>
               <Text style={styles.title}>Reportar Problema con Entrega</Text>
-              <Text style={styles.folioText}>Folio #PKT-8492</Text>
+              <Text style={styles.folioText}>Folio #{folio || 'Sin folio'}</Text>
             </View>
           </View>
 

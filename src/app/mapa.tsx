@@ -1,9 +1,12 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function MapaNavegacion() {
   const router = useRouter();
+  const { folio, direccion } = useLocalSearchParams<{ folio?: string; direccion?: string }>();
+  const folioActual = folio || 'Sin folio';
+  const direccionActual = direccion || 'Dirección no disponible';
 
   return (
     <View style={styles.container}>
@@ -37,8 +40,8 @@ export default function MapaNavegacion() {
       <View style={styles.topNavBubble}>
         <MaterialCommunityIcons name="arrow-u-right-top" size={28} color="#FFFFFF" style={styles.turnIcon} />
         <View style={styles.navTextContainer}>
-          <Text style={styles.navMainText}>En 200 m, gira a la derecha</Text>
-          <Text style={styles.navSubText}>hacia Blvd. Luis Encinas</Text>
+          <Text style={styles.navMainText}>Destino seleccionado</Text>
+          <Text style={styles.navSubText}>{direccionActual}</Text>
         </View>
       </View>
 
@@ -54,17 +57,19 @@ export default function MapaNavegacion() {
         <View style={styles.stopHeader}>
           <Text style={styles.labelSiguiente}>SIGUIENTE PARADA</Text>
           <View style={styles.folioBadge}>
-            <Text style={styles.folioBadgeText}>#PKT-8492</Text>
+            <Text style={styles.folioBadgeText}>#{folioActual}</Text>
           </View>
         </View>
 
-        <Text style={styles.addressText}>Blvd. Luis Encinas J.</Text>
+        <Text style={styles.addressText}>{direccionActual}</Text>
         <Text style={styles.etaText}>5 min · 1.2 km</Text>
 
         <View style={styles.actionButtons}>
           <TouchableOpacity 
             style={styles.arriveButton}
-            onPress={() => router.push('/finalizar')}
+            onPress={() =>
+              router.push({ pathname: '/finalizar', params: { folio: folioActual } })
+            }
           >
             <Feather name="home" size={20} color="#FFFFFF" style={styles.btnIcon} />
             <Text style={styles.arriveButtonText}>Llegué al Domicilio</Text>
@@ -72,7 +77,9 @@ export default function MapaNavegacion() {
 
           <TouchableOpacity 
             style={styles.warningButton}
-            onPress={() => router.push('/reportar')}
+            onPress={() =>
+              router.push({ pathname: '/reportar', params: { folio: folioActual } })
+            }
           >
             <Feather name="alert-triangle" size={24} color="#B45309" />
           </TouchableOpacity>

@@ -12,7 +12,7 @@ type Props = {
 
 export function MenuLateral({ visible, onClose, actual }: Props) {
   const router = useRouter();
-  const { cerrarSesion } = useAuth();
+  const { cerrarSesion, usuario } = useAuth();
 
   const ir = (destino: '/' | '/ruta' | '/escanear') => {
     onClose();
@@ -28,10 +28,9 @@ export function MenuLateral({ visible, onClose, actual }: Props) {
 
           <View style={styles.menuProfileSection}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>R</Text>
+              <Text style={styles.avatarText}>{usuario?.nombre.trim().charAt(0).toUpperCase() || 'R'}</Text>
             </View>
-            <Text style={styles.profileName}>Ricardo</Text>
-            <Text style={styles.profileType}>Repartidor Nivel 2</Text>
+            <Text style={styles.profileName}>{usuario?.nombre ?? 'Repartidor'}</Text>
           </View>
 
           <View style={styles.menuLinks}>
@@ -124,10 +123,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0B2B5B',
     marginBottom: 4,
-  },
-  profileType: {
-    fontSize: 14,
-    color: '#7A8B9E',
   },
   menuLinks: {
     flex: 1,

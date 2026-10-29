@@ -1,51 +1,18 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { MenuLateral } from '@/components/menu-lateral';
-import { useAuth } from '@/context/auth';
-
-type Notificacion = {
-  id: string;
-  icono: keyof typeof Feather.glyphMap;
-  titulo: string;
-  mensaje: string;
-  hora: string;
-  leida: boolean;
-};
+import { usePaquetes } from '@/hooks/use-paquetes';
 
 export default function RutaActiva() {
   const router = useRouter();
-  const { cerrarSesion } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
+  const { paquetes, cargando, error, reintentar } = usePaquetes();
+  const paquetesEnRuta = paquetes.filter((paquete) => paquete.estadoActual.trim().toLowerCase() === 'en ruta');
 
-  // --- Notificaciones ---
   const [notifVisible, setNotifVisible] = useState(false);
-  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([
-    { id: '1', icono: 'alert-triangle', titulo: 'Entrega prioritaria', mensaje: 'El paquete #PKT-8492 debe entregarse antes de las 12:00.', hora: 'Hace 5 min', leida: false },
-    { id: '2', icono: 'package', titulo: 'Nuevo paquete asignado', mensaje: 'Se agregó #PKT-8520 a tu ruta en la zona Centro.', hora: 'Hace 20 min', leida: false },
-    { id: '3', icono: 'map-pin', titulo: 'Cambio de dirección', mensaje: 'El cliente de #PKT-8501 actualizó su dirección.', hora: 'Hace 1 h', leida: true },
-    { id: '4', icono: 'check-circle', titulo: 'Ruta sincronizada', mensaje: 'Tu ruta del día se sincronizó correctamente.', hora: 'Hace 2 h', leida: true },
-  ]);
-
-  const hayNoLeidas = notificaciones.some((n) => !n.leida);
-
-  const marcarLeida = (id: string) => {
-    setNotificaciones((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)));
-  };
-
-  const marcarTodasLeidas = () => {
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
-  };
-
-  const paradas = [
-    { id: '1', numero: '1', folio: 'Folio #PKT-8492', direccion: 'Blvd. Luis Encinas J', badge: 'PRIORITARIO', badgeType: 'prioritario' },
-    { id: '2', numero: '2', folio: 'Folio #PKT-8501', direccion: 'Calle Reforma 8', badge: null },
-    { id: '3', numero: '3', folio: 'Folio #PKT-8502', direccion: 'Av. Solidaridad 2', badge: null },
-    { id: '4', numero: '4', folio: 'Folio #PKT-8510', direccion: 'Calle Yáñez 77, Local', badge: 'FRÁGIL', badgeType: 'fragil' },
-    { id: '5', numero: '5', folio: 'Folio #PKT-8515', direccion: 'Blvd. Morelos 11', badge: null },
-  ];
 
   return (
     <View style={styles.mainContainer}>
@@ -64,7 +31,6 @@ export default function RutaActiva() {
             <Text style={styles.headerTitle}>Ruta Activa</Text>
 
             <TouchableOpacity style={styles.headerIcon} onPress={() => setNotifVisible(true)}>
-              {hayNoLeidas && <View style={styles.notificationDot} />}
               <Feather name="bell" size={22} color="#FFFFFF" />
             </TouchableOpacity>
 
@@ -72,61 +38,76 @@ export default function RutaActiva() {
         </SafeAreaView>
       </View>
 
-      {/* Sección de Progreso */}
+      {/* Resumen de paquetes */}
       <View style={styles.progressSection}>
         <View style={styles.progressTextRow}>
-          <Text style={styles.progressTextMain}>
-            <Text style={styles.progressTextHighlight}>12</Text> / 45 Entregados
-          </Text>
-          <Text style={styles.progressPercent}>27%</Text>
-        </View>
-
-        <View style={styles.progressBarTrack}>
-          <View style={styles.progressBarFill} />
+          <Text style={styles.progressTextMain}>Paquetes en ruta</Text>
+          {cargando ? (
+            <ActivityIndicator color="#18529D" />
+          ) : (
+            <Text style={styles.progressTextHighlight}>{error ? '—' : paquetesEnRuta.length}</Text>
+          )}
         </View>
       </View>
 
       {/* Lista de Paradas */}
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {!cargando && !error && paquetesEnRuta.length === 0 ? (
+          <Text style={styles.emptyText}>No hay paquetes en ruta.</Text>
+        ) : null}
 
-        {paradas.map((parada) => (
-          <View key={parada.id} style={styles.stopCard}>
+        {error ? (
+          <View style={styles.loadError}>
+            <Text style={styles.loadErrorText}>{error}</Text>
+            <TouchableOpacity onPress={reintentar}>
+              <Text style={styles.retryText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {cargando ? <ActivityIndicator color="#18529D" style={styles.loadingIndicator} /> : null}
+
+        {paquetesEnRuta.map((parada, index) => (
+          <View key={parada.idPaquete} style={styles.stopCard}>
 
             {/* Círculo de Número */}
             <View style={styles.numberCircle}>
-              <Text style={styles.numberText}>{parada.numero}</Text>
+              <Text style={styles.numberText}>{index + 1}</Text>
             </View>
 
             {/* Información de la Parada */}
             <View style={styles.stopInfo}>
               <View style={styles.folioRow}>
-                <Text style={styles.folioText} numberOfLines={1}>Folio {parada.folio.replace('Folio ', '')}</Text>
+                <Text style={styles.folioText} numberOfLines={1}>Folio {parada.folio}</Text>
 
-                {parada.badge && (
-                  <View style={[
-                    styles.badge,
-                    parada.badgeType === 'prioritario' ? styles.badgePrioritario : styles.badgeFragil
-                  ]}>
-                    <Text style={[
-                      styles.badgeText,
-                      parada.badgeType === 'prioritario' ? styles.badgeTextPrioritario : styles.badgeTextFragil
-                    ]}>
-                      {parada.badge}
-                    </Text>
+                {parada.esPrioritario ? (
+                  <View style={[styles.badge, styles.badgePrioritario]}>
+                    <Text style={[styles.badgeText, styles.badgeTextPrioritario]}>Prioritario</Text>
                   </View>
-                )}
+                ) : null}
+                {parada.esFragil ? (
+                  <View style={[styles.badge, styles.badgeFragil]}>
+                    <Text style={[styles.badgeText, styles.badgeTextFragil]}>Frágil</Text>
+                  </View>
+                ) : null}
               </View>
 
               <View style={styles.addressRow}>
                 <Feather name="map-pin" size={12} color="#7A8B9E" style={styles.addressIcon} />
-                <Text style={styles.addressText} numberOfLines={1}>{parada.direccion}</Text>
+                <Text style={styles.addressText} numberOfLines={1}>{parada.direccionDestino}</Text>
               </View>
+              <Text style={styles.statusText}>{parada.estadoActual}</Text>
             </View>
 
             {/* Botón Navegar */}
             <TouchableOpacity
               style={styles.navigateButton}
-              onPress={() => router.push('/mapa')}
+              onPress={() =>
+                router.push({
+                  pathname: '/mapa',
+                  params: { folio: parada.folio, direccion: parada.direccionDestino },
+                })
+              }
             >
               <Feather name="navigation" size={16} color="#18529D" style={styles.navigateIcon} />
               <Text style={styles.navigateText}>Navegar</Text>
@@ -134,8 +115,6 @@ export default function RutaActiva() {
 
           </View>
         ))}
-
-        <Text style={styles.footerText}>33 PARADAS RESTANTES</Text>
 
       </ScrollView>
 
@@ -150,26 +129,11 @@ export default function RutaActiva() {
           <Pressable style={styles.notifPanel} onPress={() => { }}>
             <View style={styles.notifHeader}>
               <Text style={styles.notifTitle}>Notificaciones</Text>
-              <TouchableOpacity onPress={marcarTodasLeidas}>
-                <Text style={styles.notifMarkAll}>Marcar leídas</Text>
-              </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
-              {notificaciones.map((n) => (
-                <TouchableOpacity key={n.id} style={styles.notifItem} onPress={() => marcarLeida(n.id)}>
-                  <View style={styles.notifIconCircle}>
-                    <Feather name={n.icono} size={18} color="#18529D" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.notifItemTitle}>{n.titulo}</Text>
-                    <Text style={styles.notifItemMsg}>{n.mensaje}</Text>
-                    <Text style={styles.notifItemTime}>{n.hora}</Text>
-                  </View>
-                  {!n.leida && <View style={styles.unreadDot} />}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <Text style={styles.emptyNotifications}>
+              La API todavía no proporciona notificaciones.
+            </Text>
           </Pressable>
         </Pressable>
       </Modal>
@@ -208,18 +172,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 16,
   },
-  notificationDot: {
-    position: 'absolute',
-    right: 4,
-    top: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E53935',
-    zIndex: 1,
-    borderWidth: 1,
-    borderColor: '#132854',
-  },
   progressSection: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 24,
@@ -231,7 +183,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
   },
   progressTextMain: {
     fontSize: 14,
@@ -240,22 +191,6 @@ const styles = StyleSheet.create({
   },
   progressTextHighlight: {
     color: '#1B9356',
-  },
-  progressPercent: {
-    fontSize: 14,
-    color: '#5B7290',
-  },
-  progressBarTrack: {
-    height: 8,
-    backgroundColor: '#E6EDF5',
-    borderRadius: 4,
-    width: '100%',
-  },
-  progressBarFill: {
-    height: '100%',
-    width: '27%',
-    backgroundColor: '#1B9356',
-    borderRadius: 4,
   },
   scrollContainer: {
     padding: 16,
@@ -327,6 +262,11 @@ const styles = StyleSheet.create({
   badgeTextFragil: {
     color: '#D97706',
   },
+  statusText: {
+    color: '#5B7290',
+    fontSize: 11,
+    marginTop: 4,
+  },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -355,13 +295,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  footerText: {
+  emptyText: {
     textAlign: 'center',
-    fontSize: 11,
+    color: '#7A8B9E',
+    fontSize: 14,
+    marginTop: 24,
+  },
+  loadingIndicator: {
+    marginTop: 24,
+  },
+  loadError: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  loadErrorText: {
+    color: '#B91C1C',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  retryText: {
+    color: '#18529D',
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#9AA6B8',
-    letterSpacing: 1,
-    marginTop: 16,
+    marginTop: 8,
   },
   modalOverlay: {
     flex: 1,
@@ -467,48 +423,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0B2B5B',
   },
-  notifMarkAll: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#18529D',
-  },
-  notifItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F2F5',
-  },
-  notifIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E6F0FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  notifItemTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#0B2B5B',
-    marginBottom: 2,
-  },
-  notifItemMsg: {
-    fontSize: 12,
+  emptyNotifications: {
     color: '#5B7290',
-    marginBottom: 4,
-  },
-  notifItemTime: {
-    fontSize: 11,
-    color: '#9AA6B8',
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E53935',
-    marginLeft: 8,
+    fontSize: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    textAlign: 'center',
   },
 });

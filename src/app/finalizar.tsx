@@ -1,12 +1,13 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 export default function CompletarEntrega() {
   const router = useRouter();
+  const { folio } = useLocalSearchParams<{ folio?: string }>();
   const [nombre, setNombre] = useState('María González');
   const [foto, setFoto] = useState<string | null>(null);
 
@@ -16,7 +17,7 @@ export default function CompletarEntrega() {
   const [scrollActivo, setScrollActivo] = useState(true);
   const trazoRef = useRef('');
 
-  const terminarTrazo = () => {
+  const terminarTrazo = useCallback(() => {
     if (trazoRef.current) {
       const terminado = trazoRef.current;
       setTrazos((prev) => [...prev, terminado]);
@@ -24,29 +25,33 @@ export default function CompletarEntrega() {
     trazoRef.current = '';
     setTrazoActual('');
     setScrollActivo(true);
-  };
+  }, []);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (e) => {
-        setScrollActivo(false);
-        const { locationX, locationY } = e.nativeEvent;
-        const p = `${locationX.toFixed(1)},${locationY.toFixed(1)}`;
-        trazoRef.current = `M${p} L${p}`; // el punto inicial permite dibujar un toque
-        setTrazoActual(trazoRef.current);
-      },
-      onPanResponderMove: (e) => {
-        const { locationX, locationY } = e.nativeEvent;
-        trazoRef.current += ` L${locationX.toFixed(1)},${locationY.toFixed(1)}`;
-        setTrazoActual(trazoRef.current);
-      },
-      onPanResponderRelease: terminarTrazo,
-      onPanResponderTerminate: terminarTrazo,
-    })
-  ).current;
+  const panResponder = useMemo(
+    () =>
+      // The handlers access refs only in response to gesture events.
+      // eslint-disable-next-line react-hooks/refs
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: (e) => {
+          setScrollActivo(false);
+          const { locationX, locationY } = e.nativeEvent;
+          const p = `${locationX.toFixed(1)},${locationY.toFixed(1)}`;
+          trazoRef.current = `M${p} L${p}`; // el punto inicial permite dibujar un toque
+          setTrazoActual(trazoRef.current);
+        },
+        onPanResponderMove: (e) => {
+          const { locationX, locationY } = e.nativeEvent;
+          trazoRef.current += ` L${locationX.toFixed(1)},${locationY.toFixed(1)}`;
+          setTrazoActual(trazoRef.current);
+        },
+        onPanResponderRelease: terminarTrazo,
+        onPanResponderTerminate: terminarTrazo,
+      }),
+    [terminarTrazo]
+  );
 
   const limpiarFirma = () => {
     setTrazos([]);
@@ -99,7 +104,7 @@ export default function CompletarEntrega() {
         >
           
           <Text style={styles.subHeaderText}>
-            Entregando <Text style={styles.folioBold}>#PKT-8492</Text>
+            Entregando <Text style={styles.folioBold}>#{folio || 'Sin folio'}</Text>
           </Text>
 
           {/* Sección 1: Evidencia Fotográfica */}

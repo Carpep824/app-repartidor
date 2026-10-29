@@ -1,8 +1,9 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { usePaquetes } from '@/hooks/use-paquetes';
 import { useAuth } from '@/context/auth';
 
 import { MenuLateral } from '@/components/menu-lateral';
@@ -11,7 +12,9 @@ export default function DashboardRepartidor() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const { usuario } = useAuth();
-
+  const { paquetes, cargando, error, reintentar } = usePaquetes();
+  const prioritarios = paquetes.filter((paquete) => paquete.esPrioritario).length;
+  const fragiles = paquetes.filter((paquete) => paquete.esFragil).length;
 
   return (
     <View style={styles.mainContainer}>
@@ -45,37 +48,49 @@ export default function DashboardRepartidor() {
 
           {/* Saludo */}
           <View style={styles.greetingContainer}>
-            <Text style={styles.locationText}>CENTRO DE DISTRIBUCIÓN · HERMOSILLO</Text>
+            <Text style={styles.locationText}>PANEL DEL REPARTIDOR</Text>
             <Text style={styles.greetingText}>Buen turno, {usuario?.nombre}</Text>
           </View>
 
           {/* Tarjeta de Resumen */}
           <View style={styles.summaryCard}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Paquetes asignados hoy</Text>
+              <Text style={styles.cardTitle}>Paquetes registrados</Text>
               <View style={styles.iconCircle}>
                 <Feather name="box" size={18} color="#18529D" />
               </View>
             </View>
 
-            <Text style={styles.bigNumber}>45</Text>
+            {cargando ? (
+              <ActivityIndicator color="#18529D" />
+            ) : (
+              <Text style={styles.bigNumber}>{error ? '—' : paquetes.length}</Text>
+            )}
 
             <View style={styles.divider} />
 
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>18</Text>
+                <Text style={styles.statValue}>{cargando || error ? '—' : prioritarios}</Text>
                 <Text style={styles.statLabel}>Prioritarios</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>7</Text>
-                <Text style={styles.statLabel}>Zonas</Text>
+                <Text style={styles.statValue}>{cargando || error ? '—' : fragiles}</Text>
+                <Text style={styles.statLabel}>Frágiles</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>~6h</Text>
-                <Text style={styles.statLabel}>Estimado</Text>
+                <Text style={styles.statValue}>{cargando || error ? '—' : paquetes.filter((paquete) => paquete.estadoActual.toLowerCase() === 'en ruta').length}</Text>
+                <Text style={styles.statLabel}>En ruta</Text>
               </View>
             </View>
+            {error ? (
+              <View style={styles.loadError}>
+                <Text style={styles.loadErrorText}>{error}</Text>
+                <TouchableOpacity onPress={reintentar}>
+                  <Text style={styles.retryText}>Reintentar</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
 
           {/* Espaciador flexible para empujar los botones al fondo */}
@@ -245,6 +260,19 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: '#7A8B9E',
+  },
+  loadError: {
+    marginTop: 16,
+  },
+  loadErrorText: {
+    color: '#B91C1C',
+    fontSize: 13,
+  },
+  retryText: {
+    color: '#18529D',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 8,
   },
   actionButtons: {
     paddingBottom: 16,
