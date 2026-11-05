@@ -94,11 +94,17 @@ export function usePaquetes() {
     setIntento((actual) => actual + 1);
   };
 
+  // Función añadida exclusivamente para alimentar la vista del mapa con los datos reales
+  const getPaqueteByFolio = (folio: string) => {
+    return paquetes.find((p) => p.folio === folio) || null;
+  };
+
   return {
     paquetes,
     cargando,
     error,
     reintentar,
+    getPaqueteByFolio,
   };
 }
   */
