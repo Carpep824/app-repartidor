@@ -1,4 +1,5 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -37,11 +38,14 @@ export default function DashboardRepartidor() {
 
           {/* Header / Logo */}
           <View style={styles.logoContainer}>
-            <View style={styles.logoIconBg}>
-              <Feather name="package" size={20} color="#FFFFFF" />
-            </View>
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={styles.logoImage}
+              contentFit="contain"
+              accessibilityLabel="Logo de PaqTracker"
+            />
             <View style={styles.logoTextWrapper}>
-              <Text style={styles.logoTextMain}>Rumbo<Text style={styles.logoTextLight}>Envíos</Text></Text>
+              <Text style={styles.logoTextMain}>Paq<Text style={styles.logoTextLight}>Tracker</Text></Text>
               <Text style={styles.logoTextSub}>REPARTIDOR</Text>
             </View>
           </View>
@@ -160,13 +164,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  logoIconBg: {
-    backgroundColor: '#18529D',
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+  logoImage: {
+    width: 44,
+    height: 44,
     marginRight: 12,
   },
   logoTextWrapper: {

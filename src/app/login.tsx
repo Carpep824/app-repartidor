@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 
 import { useAuth } from '@/context/auth';
+import { Image } from 'expo-image';
 
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -48,11 +49,14 @@ export default function Login() {
         >
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <View style={styles.logoIconBg}>
-              <Feather name="package" size={32} color="#FFFFFF" />
-            </View>
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={styles.logoImage}
+              contentFit="contain"
+              accessibilityLabel="Logo de PaqTracker"
+            />
             <Text style={styles.logoTextMain}>
-              Rumbo<Text style={styles.logoTextLight}>Envíos</Text>
+              Paq<Text style={styles.logoTextLight}>Tracker</Text>
             </Text>
             <Text style={styles.logoTextSub}>REPARTIDOR</Text>
           </View>
@@ -145,14 +149,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoIconBg: {
-    backgroundColor: '#18529D',
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+  logoImage: {
+    width: 96,
+    height: 96,
+    marginBottom: 12,
   },
   logoTextMain: {
     fontSize: 28,
