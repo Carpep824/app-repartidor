@@ -7,6 +7,8 @@ export type Paquete = {
   esPrioritario: boolean;
   esFragil: boolean;
   estadoActual: string;
+  // "lat,lng". La API todavía no lo manda; si falta, se calcula desde la dirección.
+  coordenadasDestino?: string | null;
 };
 
 function isPaquete(value: unknown): value is Paquete {

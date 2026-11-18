@@ -2,19 +2,23 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, PanResponder, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+
+import { construirSvgFirma, FotoEvidencia, mensajeErrorEntrega, registrarEntrega } from '@/services/entregas';
 
 export default function CompletarEntrega() {
   const router = useRouter();
   const { folio } = useLocalSearchParams<{ folio?: string }>();
-  const [nombre, setNombre] = useState('María González');
-  const [foto, setFoto] = useState<string | null>(null);
+  const [nombre, setNombre] = useState('');
+  const [foto, setFoto] = useState<FotoEvidencia | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   // --- Firma ---
   const [trazos, setTrazos] = useState<string[]>([]);
   const [trazoActual, setTrazoActual] = useState('');
   const [scrollActivo, setScrollActivo] = useState(true);
+  const [tamanoFirma, setTamanoFirma] = useState({ ancho: 0, alto: 0 });
   const trazoRef = useRef('');
 
   const terminarTrazo = useCallback(() => {
@@ -73,7 +77,38 @@ export default function CompletarEntrega() {
     });
 
     if (!result.canceled) {
-      setFoto(result.assets[0].uri);
+      const asset = result.assets[0];
+      setFoto({ uri: asset.uri, nombreArchivo: asset.fileName, tipo: asset.mimeType });
+    }
+  };
+
+  // --- Envío ---
+  const faltantes = [
+    !foto && 'foto',
+    trazos.length === 0 && 'firma',
+    !nombre.trim() && 'nombre de quien recibe',
+  ].filter(Boolean) as string[];
+  const puedeFinalizar = !!folio && faltantes.length === 0 && !enviando;
+
+  const finalizarEntrega = async () => {
+    if (!puedeFinalizar || !foto || !folio) return;
+
+    setEnviando(true);
+    try {
+      await registrarEntrega({
+        folio,
+        nombreReceptor: nombre,
+        firmaSvg: construirSvgFirma(trazos, tamanoFirma.ancho, tamanoFirma.alto),
+        foto,
+      });
+      Alert.alert('Entrega registrada', `El paquete #${folio} quedó como entregado.`, [
+        { text: 'Aceptar', onPress: () => router.dismissTo('/') },
+      ]);
+    } catch (e) {
+      // Los datos se quedan en pantalla para poder reintentar
+      Alert.alert('No se pudo registrar la entrega', mensajeErrorEntrega(e));
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -110,9 +145,9 @@ export default function CompletarEntrega() {
           {/* Sección 1: Evidencia Fotográfica */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>1 · EVIDENCIA FOTOGRÁFICA</Text>
-            <TouchableOpacity style={styles.photoBox} onPress={tomarFoto}>
+            <TouchableOpacity style={styles.photoBox} onPress={tomarFoto} disabled={enviando}>
               {foto ? (
-                <Image source={{ uri: foto }} style={styles.photoPreview} />
+                <Image source={{ uri: foto.uri }} style={styles.photoPreview} />
               ) : (
                 <>
                   <View style={styles.photoIconCircle}>
@@ -128,12 +163,19 @@ export default function CompletarEntrega() {
           <View style={styles.section}>
             <View style={styles.signatureHeader}>
               <Text style={styles.sectionTitle}>2 · FIRMA DEL RECEPTOR</Text>
-              <TouchableOpacity onPress={limpiarFirma}>
+              <TouchableOpacity onPress={limpiarFirma} disabled={enviando}>
                 <Text style={styles.clearText}>Limpiar</Text>
               </TouchableOpacity>
             </View>
-            
-            <View style={styles.signatureBox} {...panResponder.panHandlers}>
+
+            <View
+              style={styles.signatureBox}
+              onLayout={(e) => {
+                const { width, height } = e.nativeEvent.layout;
+                setTamanoFirma({ ancho: width, alto: height });
+              }}
+              {...panResponder.panHandlers}
+            >
               <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
                 {trazos.map((d, i) => (
                   <Path key={i} d={d} stroke="#0B2B5B" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -155,11 +197,14 @@ export default function CompletarEntrega() {
               <View style={styles.floatingLabelContainer}>
                 <Text style={styles.floatingLabel}>Nombre de quien recibe</Text>
               </View>
-              <TextInput 
+              <TextInput
                 style={styles.input}
                 value={nombre}
                 onChangeText={setNombre}
+                placeholder="Nombre completo"
                 placeholderTextColor="#9AA6B8"
+                autoCapitalize="words"
+                editable={!enviando}
               />
             </View>
           </View>
@@ -169,12 +214,25 @@ export default function CompletarEntrega() {
 
       {/* Botón Finalizar */}
       <View style={styles.footerContainer}>
-        <TouchableOpacity 
-          style={styles.submitButton}
-          onPress={() => router.push('/')} // Retorna al dashboard al finalizar
+        {faltantes.length > 0 ? (
+          <Text style={styles.faltantesText}>Falta: {faltantes.join(', ')}</Text>
+        ) : null}
+        <TouchableOpacity
+          style={[styles.submitButton, !puedeFinalizar && styles.submitButtonDisabled]}
+          onPress={finalizarEntrega}
+          disabled={!puedeFinalizar}
         >
-          <Feather name="check" size={20} color="#FFFFFF" style={styles.submitIcon} />
-          <Text style={styles.submitButtonText}>Finalizar Entrega</Text>
+          {enviando ? (
+            <>
+              <ActivityIndicator color="#FFFFFF" style={styles.submitIcon} />
+              <Text style={styles.submitButtonText}>Enviando...</Text>
+            </>
+          ) : (
+            <>
+              <Feather name="check" size={20} color="#FFFFFF" style={styles.submitIcon} />
+              <Text style={styles.submitButtonText}>Finalizar Entrega</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -338,6 +396,15 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#9AA6B8',
+  },
+  faltantesText: {
+    color: '#5B7290',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 8,
   },
   submitIcon: {
     marginRight: 8,

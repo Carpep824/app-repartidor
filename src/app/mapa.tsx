@@ -2,10 +2,11 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePaquetes } from '../hooks/use-paquetes';
+import { Coordenadas, obtenerCoordenadas } from '../services/coordenadas';
 
 // Interfaz para la instrucción visual de la interfaz
 interface ManiobraUI {
@@ -85,10 +86,15 @@ export default function MapaNavegacion() {
   const mapRef = useRef<MapView>(null);
 
   const { getPaqueteByFolio, cargando } = usePaquetes();
-  const paqueteActual = getPaqueteByFolio(folio || 'PKT-8492');
-  
+  const paqueteActual = folio ? getPaqueteByFolio(folio) : null;
+
+  // Coordenadas del destino: vienen del backend o se calculan a partir de la dirección
+  const [ubicacionDestino, setUbicacionDestino] = useState<{ folio: string; coords: Coordenadas | null } | null>(null);
+  const destino = paqueteActual && ubicacionDestino?.folio === paqueteActual.folio ? ubicacionDestino.coords : null;
+  const buscandoDestino = paqueteActual !== null && ubicacionDestino?.folio !== paqueteActual.folio;
+
   // Referencias mutables para usarlas de forma segura dentro del listener del GPS sin causar re-renders
-  const paqueteRef = useRef(paqueteActual);
+  const destinoRef = useRef<Coordenadas | null>(null);
   const rutaCoordenadasRef = useRef<{ latitude: number; longitude: number }[]>([]);
   const enRecalculoRef = useRef<boolean>(false);
   const esFallbackRef = useRef<boolean>(false);
@@ -104,20 +110,29 @@ export default function MapaNavegacion() {
   const [distanciaAlGiro, setDistanciaAlGiro] = useState<number>(0);
   const [permisoGPS, setPermisoGPS] = useState<boolean | null>(null);
   const [estadoNavegacion, setEstadoNavegacion] = useState<string>('Calculando...');
+  const [alturaBanner, setAlturaBanner] = useState<number>(0);
 
-  // Mantener actualizado el paquete en la referencia
-  useEffect(() => { paqueteRef.current = paqueteActual; }, [paqueteActual]);
+  // Mantener actualizado el destino en la referencia
+  useEffect(() => { destinoRef.current = destino; }, [destino]);
+
+  // Obtener las coordenadas del paquete cuando ya se cargó
+  useEffect(() => {
+    if (!paqueteActual) return;
+    let activo = true;
+    obtenerCoordenadas(paqueteActual).then((coords) => {
+      if (activo) setUbicacionDestino({ folio: paqueteActual.folio, coords });
+    });
+    return () => { activo = false; };
+  }, [paqueteActual]);
 
   // Función núcleo para trazar la ruta (Llamada al inicio y cuando hay desvío)
   const calcularYSetearRuta = async (latOrigen: number, lngOrigen: number, esRecalculo = false) => {
-    if (!paqueteRef.current) return;
-    
+    if (!destinoRef.current) return;
+
     enRecalculoRef.current = true;
     if (esRecalculo) setEstadoNavegacion('Recalculando ruta...');
 
-    const coords = paqueteRef.current.coordenadasDestino.split(',').map(Number);
-    const latDestino = coords[0];
-    const lngDestino = coords[1];
+    const { latitude: latDestino, longitude: lngDestino } = destinoRef.current;
 
     try {
       const url = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${lngOrigen},${latOrigen};${lngDestino},${latDestino}?overview=full&geometries=geojson&steps=true`;
@@ -178,20 +193,24 @@ export default function MapaNavegacion() {
 
   // Escuchador principal de GPS
   useEffect(() => {
+    if (!destino) return; // Sin destino no hay ruta que trazar
+
     let subscription: Location.LocationSubscription | null = null;
+    let cancelado = false;
     let inicializado = false;
 
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
+      if (cancelado) return;
       if (status !== 'granted') {
         setPermisoGPS(false);
         return;
       }
       setPermisoGPS(true);
 
-      subscription = await Location.watchPositionAsync(
+      const nuevaSuscripcion = await Location.watchPositionAsync(
         {
-          accuracy: Location.LocationAccuracy.BestForNavigation,
+          accuracy: Location.Accuracy.BestForNavigation,
           distanceInterval: 5, // Se actualiza cada 5 metros recorridos
         },
         (newLoc) => {
@@ -246,34 +265,54 @@ export default function MapaNavegacion() {
           });
         }
       );
+
+      // Si la pantalla se cerró mientras se pedía el GPS, no dejamos la suscripción viva
+      if (cancelado) {
+        nuevaSuscripcion.remove();
+      } else {
+        subscription = nuevaSuscripcion;
+      }
     })();
 
-    return () => { if (subscription) subscription.remove(); };
-  }, [paqueteActual]); // Se reinicia solo si cambia el folio del paquete
+    return () => {
+      cancelado = true;
+      if (subscription) subscription.remove();
+    };
+  }, [destino]); // Se reinicia solo si cambia el destino
 
   const centrarEnUbicacion = () => {
     if (ubicacionActual && mapRef.current) {
       mapRef.current.animateCamera({
         center: { latitude: ubicacionActual.latitude, longitude: ubicacionActual.longitude },
         zoom: 17.5,
-        pitch: 55, 
+        pitch: 55,
         heading: 0,
-        duration: 1200,
-      });
+      }, { duration: 1200 });
     }
   };
 
-  if (cargando) {
+  if (cargando || buscandoDestino) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, styles.centrado]}>
         <ActivityIndicator size="large" color="#0F9D58" />
-        <Text style={{ marginTop: 12, color: '#5B7290', fontWeight: 'bold' }}>Preparando ruta...</Text>
+        <Text style={styles.textoEstadoPantalla}>Preparando ruta...</Text>
+      </View>
+    );
+  }
+
+  if (!paqueteActual) {
+    return (
+      <View style={[styles.container, styles.centrado]}>
+        <MaterialCommunityIcons name="package-variant-remove" size={56} color="#5B7290" />
+        <Text style={styles.textoEstadoPantalla}>No se encontró el paquete {folio ?? ''}.</Text>
+        <TouchableOpacity style={styles.botonVolver} onPress={() => router.back()}>
+          <Text style={styles.botonVolverTexto}>Volver</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   const pasoActivo = instrucciones.length > 0 ? instrucciones[pasoActualIndex] : null;
-  const coordsDestino = paqueteActual?.coordenadasDestino?.split(',').map(Number);
 
   return (
     <View style={styles.container}>
@@ -284,22 +323,23 @@ export default function MapaNavegacion() {
         showsMyLocationButton={false}
         pitchEnabled={true}
         initialRegion={{
-          latitude: coordsDestino ? coordsDestino[0] : 29.08919,
-          longitude: coordsDestino ? coordsDestino[1] : -110.96133,
+          latitude: destino ? destino.latitude : 29.08919,
+          longitude: destino ? destino.longitude : -110.96133,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
       >
-        {paqueteActual && coordsDestino && (
-          <Marker coordinate={{ latitude: coordsDestino[0], longitude: coordsDestino[1] }} />
-        )}
+        {destino && <Marker coordinate={destino} />}
         {rutaCoordenadas.length > 0 && (
           <Polyline coordinates={rutaCoordenadas} strokeWidth={6} strokeColor="#2563EB" />
         )}
       </MapView>
 
       {/* BANNER DE NAVEGACIÓN INTELIGENTE */}
-      <View style={styles.navBanner}>
+      <View
+        style={styles.navBanner}
+        onLayout={(e) => setAlturaBanner(e.nativeEvent.layout.height)}
+      >
         <SafeAreaView edges={['top']}>
           <View style={styles.navBannerContent}>
             <MaterialCommunityIcons 
@@ -308,7 +348,7 @@ export default function MapaNavegacion() {
               color="#FFFFFF" 
             />
             <View style={styles.navBannerTextContainer}>
-              <Text style={styles.navDistanceText}>{estadoNavegacion}</Text>
+              <Text style={styles.navDistanceText}>{destino ? estadoNavegacion : 'Sin ubicación'}</Text>
               <Text style={styles.navInstructionText} numberOfLines={2}>
                 {pasoActivo ? pasoActivo.instruccion : `Hacia: ${paqueteActual?.direccionDestino || 'Destino'}`}
               </Text>
@@ -317,7 +357,10 @@ export default function MapaNavegacion() {
         </SafeAreaView>
       </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity
+        style={[styles.backButton, { top: alturaBanner + 12 }]}
+        onPress={() => router.back()}
+      >
         <Feather name="x" size={26} color="#1F2937" />
       </TouchableOpacity>
 
@@ -348,6 +391,10 @@ export default function MapaNavegacion() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#E2E8F0' },
+  centrado: { justifyContent: 'center', alignItems: 'center', padding: 24 },
+  textoEstadoPantalla: { marginTop: 12, color: '#5B7290', fontWeight: 'bold', textAlign: 'center' },
+  botonVolver: { marginTop: 20, backgroundColor: '#0F172A', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 12 },
+  botonVolverTexto: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
   mapBackground: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   
   navBanner: {
@@ -391,7 +438,6 @@ const styles = StyleSheet.create({
 
   backButton: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? StatusBar.currentHeight! + 130 : 150,
     right: 16,
     width: 48,
     height: 48,

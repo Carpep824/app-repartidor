@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-// Mock de datos alineado al Diagrama de Clases (usando camelCase)
-const MOCK_PAQUETES = [
+import { obtenerPaquetes, Paquete } from '@/services/packages';
+
+const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
+
+// Datos de prueba: solo se usan con EXPO_PUBLIC_USE_MOCK=true
+const MOCK_PAQUETES: Paquete[] = [
   {
     idPaquete: 101,
     folio: 'PKT-8492',
-    direccionDestino: 'Aurora 79, Palmar del Sol, 83250 Hermosillo', 
-    coordenadasDestino: '29.0784056,-110.9808664', 
+    direccionDestino: 'Aurora 79, Palmar del Sol, 83250 Hermosillo',
+    coordenadasDestino: '29.0784056,-110.9808664',
     esPrioritario: true,
     esFragil: false,
-    estadoActual: 'En ruta'
+    estadoActual: 'En ruta',
   },
   {
     idPaquete: 102,
@@ -18,48 +23,23 @@ const MOCK_PAQUETES = [
     coordenadasDestino: '29.0915, -110.9650',
     esPrioritario: false,
     esFragil: true,
-    estadoActual: 'En ruta'
-  }
+    estadoActual: 'En ruta',
+  },
 ];
 
-export function usePaquetes() {
-  const [paquetes, setPaquetes] = useState<typeof MOCK_PAQUETES>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const cargarDatos = () => {
-    setCargando(true);
-    setError(null);
-    
-    // Simulamos la latencia de red de la API
-    setTimeout(() => {
-      setPaquetes(MOCK_PAQUETES);
-      setCargando(false);
-    }, 1000);
-  };
-
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  // Función específica para la vista del mapa
-  const getPaqueteByFolio = (folio: string) => {
-    return paquetes.find(p => p.folio === folio) || null;
-  };
-
-  return { 
-    paquetes, 
-    cargando, 
-    error, 
-    reintentar: cargarDatos, 
-    getPaqueteByFolio 
-  };
+async function cargarPaquetes(): Promise<Paquete[]> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return MOCK_PAQUETES;
+  }
+  return obtenerPaquetes();
 }
 
-/*
-import { useEffect, useState } from 'react';
-
-import { obtenerPaquetes, Paquete } from '@/services/packages';
+function mensajeDeError(e: unknown): string {
+  const mensaje = e instanceof Error ? e.message : '';
+  if (mensaje.includes('Network')) return 'No se pudo conectar al servidor.';
+  return mensaje || 'No se pudieron cargar los paquetes.';
+}
 
 export function usePaquetes() {
   const [paquetes, setPaquetes] = useState<Paquete[]>([]);
@@ -70,14 +50,15 @@ export function usePaquetes() {
   useEffect(() => {
     let activo = true;
 
-    obtenerPaquetes()
+    cargarPaquetes()
       .then((resultado) => {
-        if (activo) setPaquetes(resultado);
+        if (activo) {
+          setPaquetes(resultado);
+          setError(null);
+        }
       })
       .catch((e: unknown) => {
-        if (activo) {
-          setError(e instanceof Error ? e.message : 'No se pudieron cargar los paquetes.');
-        }
+        if (activo) setError(mensajeDeError(e));
       })
       .finally(() => {
         if (activo) setCargando(false);
@@ -88,23 +69,27 @@ export function usePaquetes() {
     };
   }, [intento]);
 
+  // Al volver a la pantalla (por ejemplo, después de finalizar una entrega) se recarga la lista
+  // sin mostrar el indicador de carga. La primera vez no, porque el efecto de arriba ya cargó.
+  const yaEnfocada = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!yaEnfocada.current) {
+        yaEnfocada.current = true;
+        return;
+      }
+      setIntento((actual) => actual + 1);
+    }, [])
+  );
+
   const reintentar = () => {
     setCargando(true);
     setError(null);
     setIntento((actual) => actual + 1);
   };
 
-  // Función añadida exclusivamente para alimentar la vista del mapa con los datos reales
-  const getPaqueteByFolio = (folio: string) => {
-    return paquetes.find((p) => p.folio === folio) || null;
-  };
+  const getPaqueteByFolio = (folio: string) =>
+    paquetes.find((paquete) => paquete.folio === folio) ?? null;
 
-  return {
-    paquetes,
-    cargando,
-    error,
-    reintentar,
-    getPaqueteByFolio,
-  };
+  return { paquetes, cargando, error, reintentar, getPaqueteByFolio };
 }
-  */
