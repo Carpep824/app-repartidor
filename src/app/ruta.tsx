@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { CampanaNotificaciones } from '@/components/campana-notificaciones';
 import { MenuLateral } from '@/components/menu-lateral';
 import { usePaquetes } from '@/hooks/use-paquetes';
 
@@ -11,8 +12,6 @@ export default function RutaActiva() {
   const [menuVisible, setMenuVisible] = useState(false);
   const { paquetes, cargando, error, reintentar } = usePaquetes();
   const paquetesEnRuta = paquetes.filter((paquete) => paquete.estadoActual.trim().toLowerCase() === 'en ruta');
-
-  const [notifVisible, setNotifVisible] = useState(false);
 
   return (
     <View style={styles.mainContainer}>
@@ -30,9 +29,7 @@ export default function RutaActiva() {
 
             <Text style={styles.headerTitle}>Ruta Activa</Text>
 
-            <TouchableOpacity style={styles.headerIcon} onPress={() => setNotifVisible(true)}>
-              <Feather name="bell" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
+            <CampanaNotificaciones />
 
           </View>
         </SafeAreaView>
@@ -117,26 +114,6 @@ export default function RutaActiva() {
         ))}
 
       </ScrollView>
-
-      {/* Panel de Notificaciones (Modal) */}
-      <Modal
-        visible={notifVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setNotifVisible(false)}
-      >
-        <Pressable style={styles.notifOverlay} onPress={() => setNotifVisible(false)}>
-          <Pressable style={styles.notifPanel} onPress={() => { }}>
-            <View style={styles.notifHeader}>
-              <Text style={styles.notifTitle}>Notificaciones</Text>
-            </View>
-
-            <Text style={styles.emptyNotifications}>
-              La API todavía no proporciona notificaciones.
-            </Text>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       {/* Menú Lateral (Modal) */}
       <MenuLateral visible={menuVisible} onClose={() => setMenuVisible(false)} actual="ruta" />
@@ -390,44 +367,5 @@ const styles = StyleSheet.create({
     color: '#E53935',
     marginLeft: 16,
     fontWeight: '600',
-  },
-  notifOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    alignItems: 'flex-end',
-    paddingTop: (StatusBar.currentHeight ?? 44) + 60,
-    paddingHorizontal: 16,
-  },
-  notifPanel: {
-    width: '92%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  notifHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6EDF5',
-  },
-  notifTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0B2B5B',
-  },
-  emptyNotifications: {
-    color: '#5B7290',
-    fontSize: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    textAlign: 'center',
   },
 });
