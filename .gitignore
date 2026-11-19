@@ -41,3 +41,7 @@ example
 # generated native folders
 /ios
 /android
+
+# pruebas: resultados de cada corrida del script y archivos temporales de Excel
+pruebas/resultados/
+~$*
