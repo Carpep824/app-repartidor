@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 import { apiFetch } from './api';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
@@ -37,16 +39,18 @@ export async function registrarEntrega(datos: DatosEntrega): Promise<void> {
     return;
   }
 
+  // La fetch de Expo no acepta el formato { uri, name, type } de React Native:
+  // la foto se adjunta como File de expo-file-system, que trae su nombre y su tipo (image/jpeg).
+  const archivoFoto = new File(datos.foto.uri);
+  if (!archivoFoto.exists) {
+    throw new Error('No se encontró la foto en el teléfono. Vuelve a tomarla.');
+  }
+
   const form = new FormData();
   form.append('folio', datos.folio);
   form.append('nombreReceptor', datos.nombreReceptor.trim());
   form.append('firmaSvg', datos.firmaSvg);
-  // React Native acepta { uri, name, type } como archivo dentro de FormData
-  form.append('foto', {
-    uri: datos.foto.uri,
-    name: datos.foto.nombreArchivo || `evidencia-${datos.folio}.jpg`,
-    type: datos.foto.tipo || 'image/jpeg',
-  } as unknown as Blob);
+  form.append('foto', archivoFoto);
 
   await apiFetch('/entregas', { method: 'POST', body: form }, { tiempoLimiteMs: 60000 });
 }
