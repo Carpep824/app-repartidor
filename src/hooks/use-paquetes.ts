@@ -1,6 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { mensajeDeError } from '@/services/api';
 import { obtenerPaquetes, Paquete } from '@/services/packages';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
@@ -35,10 +36,10 @@ async function cargarPaquetes(): Promise<Paquete[]> {
   return obtenerPaquetes();
 }
 
-function mensajeDeError(e: unknown): string {
-  const mensaje = e instanceof Error ? e.message : '';
-  if (mensaje.includes('Network')) return 'No se pudo conectar al servidor.';
-  return mensaje || 'No se pudieron cargar los paquetes.';
+function mensajeErrorPaquetes(e: unknown): string {
+  return mensajeDeError(e, 'No se pudieron cargar los paquetes.', {
+    porEstado: { 403: 'Tu cuenta no tiene permiso para ver estos paquetes.' },
+  });
 }
 
 export function usePaquetes() {
@@ -58,7 +59,7 @@ export function usePaquetes() {
         }
       })
       .catch((e: unknown) => {
-        if (activo) setError(mensajeDeError(e));
+        if (activo) setError(mensajeErrorPaquetes(e));
       })
       .finally(() => {
         if (activo) setCargando(false);

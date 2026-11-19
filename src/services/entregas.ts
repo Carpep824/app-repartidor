@@ -1,6 +1,6 @@
 import { File } from 'expo-file-system';
 
-import { apiFetch } from './api';
+import { apiFetch, mensajeDeError } from './api';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === 'true';
 
@@ -56,9 +56,12 @@ export async function registrarEntrega(datos: DatosEntrega): Promise<void> {
 }
 
 export function mensajeErrorEntrega(e: unknown): string {
-  const mensaje = e instanceof Error ? e.message : '';
-  if (mensaje.includes('Network')) return 'No se pudo conectar al servidor. Revisa tu conexión e inténtalo de nuevo.';
-  if (mensaje.includes('404')) return 'El servidor todavía no tiene el servicio para registrar entregas (/entregas).';
-  if (mensaje.includes('401')) return 'Tu sesión expiró. Vuelve a iniciar sesión.';
-  return mensaje || 'No se pudo registrar la entrega.';
+  return mensajeDeError(e, 'No se pudo registrar la entrega.', {
+    porEstado: {
+      403: 'Tu cuenta no tiene permiso para registrar entregas.',
+      404: 'No se encontró el paquete.',
+      405: 'El servidor todavía no tiene el servicio para registrar entregas.',
+      409: 'Este paquete ya fue entregado.',
+    },
+  });
 }
