@@ -7,6 +7,7 @@ import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text,
 import { usePaquetes } from '@/hooks/use-paquetes';
 import { useAuth } from '@/context/auth';
 
+import { CampanaNotificaciones } from '@/components/campana-notificaciones';
 import { MenuLateral } from '@/components/menu-lateral';
 
 export default function DashboardRepartidor() {
@@ -28,7 +29,7 @@ export default function DashboardRepartidor() {
               <Feather name="menu" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Inicio</Text>
-            <View style={{ width: 24 }} />
+            <CampanaNotificaciones />
           </View>
         </SafeAreaView>
       </View>

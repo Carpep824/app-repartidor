@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 
 import { useAuth } from '@/context/auth';
+import { ApiError, mensajeDeError } from '@/services/api';
 import { Image } from 'expo-image';
 
 import { useState } from 'react';
@@ -24,12 +25,14 @@ export default function Login() {
     setCargando(true);
     try {
       await iniciarSesion(usuario.trim(), password); // el guard del _layout te lleva al dashboard
-    } catch (e: any) {
-      const msg = String(e?.message ?? '');
+    } catch (e: unknown) {
+      const credencialesRechazadas = e instanceof ApiError && (e.status === 400 || e.status === 401);
       setError(
-        msg.includes('Network')
-          ? 'No se pudo conectar al servidor.'
-          : 'Correo o contraseña incorrectos.'
+        credencialesRechazadas
+          ? 'Correo o contraseña incorrectos.'
+          : mensajeDeError(e, 'No se pudo iniciar sesión.', {
+              porEstado: { 403: 'Tu cuenta no tiene acceso a esta app.' },
+            })
       );
     } finally {
       setCargando(false);
